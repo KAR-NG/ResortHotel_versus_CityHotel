@@ -1,0 +1,1123 @@
+---
+title: "Exploring hotel data set to answer business questions"
+subtitle: "Personal project"
+author: "Kar Ng"
+date: "2021"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 3
+always_allow_html: yes
+    
+---
+
+***  
+
+![](C:\Users\karho\Desktop\Google Data Analytics Certificate\Course 8 Materials - Capstone project\hotel\pic2.png)
+
+***  
+
+
+```{r echo=FALSE}
+bytes <- file.size("Rmarkdown.Rmd")
+words <- bytes/10
+minutes <- words/200
+```
+
+Reading time: `r round(minutes)` minutes
+
+
+## 1 SUMMARY 
+
+This is a personal project uses a data set introduced in the 6-month extensive Google Data Analytics Professional Certificate program. This data set recorded 119k rows of booking data and 32 columns of variables for two hotels - a city and a resort, between 2015 to 2017. This project aims to investigate the differences between these 2 type of hotels based on data and information available in the data set.
+
+This data set was fairly cleaned. Data manipulation was performed with a bit of cleaning to synthesise several functional metrics and to convert some data types into a new type. All analyses in this project was completed in R Studio using R programming language and R Markdown. 
+
+14 graphs was synthesised to compare both hotels in 14 aspects. Results only showed that city hotel had 20% to 30% more bookings than resort hotel, however resort hotel has potential to generate more revenue with lesser bookings, indicated in 2015 data which had less bookings but higher revenue than city hotel. Majority of guests (77%) in both hotels ordered only 1 meal. Generally guests in resort hotel will order at least 1 meal, which had only 3% of guests ordered no meal compared to 14% of guests in city hotel that ordered no meal. Guests in resort hotel had 4.5 times more demands in parking-space. Majority of guests booked their reservations through travel agents and travel operator (82% in city hotel vs 68% in resort hotel), but 10% more guests in resort hotel booked directly to the hotel (12% in city hotel vs 22.6% in resort hotel). Both hotels shared a lot of similarities in many statistics covered in this project.
+
+
+**Some graphs in this project: **
+
+![](C:\Users\karho\Desktop\Google Data Analytics Certificate\Course 8 Materials - Capstone project\hotel\pic3.png)
+
+
+## 2 R PACKAGES
+R Packages loaded for this projects included tidyverse series (ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr and forcats), DT, skimr, kableExtra, treemapify, lubridate, gridExtra, grid, and hexbin.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(DT)
+library(skimr)
+library(kableExtra)
+library(treemapify)
+library(lubridate)
+library(gridExtra)
+library(grid)
+library(hexbin)
+
+```
+
+## 3 SCENARIO AND BUSINESS QUESTIONS
+
+It will be interesting to compare two hotels as both hotels may have been built for different purposes. City hotels would very likely is just a place for simple lodging, but resort hotels would have been built near coastal regions, rain forests, theme parks, or having in-house entertainment facilities for relaxation purposes. We might have some insightful results after exploring their differences in reservation, administration, and marketing statistics, and study the disparities.
+
+Many business questions this project will be answering, but not limited to:
+
+* How are resort and city hotels different from each other?  
+* How are most customers booked their room reservation?
+* How is the proportion of guests with kids in both hotels?
+* How is the deposit statistics in both hotels? 
+* Do family size visitors with children often book in advance? 
+
+Please aware that the context of this data set may only apply to these two specific hotels and may not represent the entire city and resort hotel segments. Country's GDP, people power of purchase, income statistics, average size of families of the region, religious, cultures and beliefs may be different from the country where the data set belongs to. 
+
+Nonetheless, I will proceed the analysis. 
+
+
+## 4 DATA PREPARATION
+
+The data set used in this project is called "Hotel Booking Demand". It was introduced by the 6-month extensive Google Data Analytics Certificate I have completed on 31 May 2021. This data set was used by the course in a few parts of its data analysis activities. 
+
+It is a public data set on Kaggle, by Jesse Mostipak, credited from the article **Hotel Booking Demand Datasets**, written by Nuno Antonio, Ana Almeida, and Luis Nunes for Data in Brief, Volume 22, February 2019. In short about Kaggle, Kaggle is a great website for data science community. Click this [link](https://www.kaggle.com/jessemostipak/hotel-booking-demand) to go to the relevant Kaggle webpage. 
+
+This hotel data set was downloaded from Kaggle and stored in a spreadsheet csv file. 
+
+### 4.1 Data import
+
+This section imports the csv hotel data set into R. Click the right **code** to see associated codes. Following table show the first 10k rows of data in the data set. There are nearly 120k rows of data. 
+
+```{r, message = FALSE, warning = FALSE}
+mydata <- read_csv("hotel_bookings.csv")
+
+mydata
+```
+
+### 4.2 Data description
+Following table description is created by information extracted from the above relevant Kaggle webpage. This table define and describe what are the variables (or known as "factors" located at the first row grouping each columns of data) in the data set. 
+
+```{r}
+
+Variables <- c("hotel", 
+               "is_canceled",
+               "lead_time",
+               "arrival_date_year",
+               "arrival_date_month",
+               "arrival_date_week_number",
+               "arrival_date_day_of_month",
+               "stays_in_weekend_nights",
+               "stays_in_week_nights",
+               "adults",
+               "children",
+               "babies",
+               "meal",
+               "country",
+               "market_segment",
+               "distribution_channel",
+               "is_repeated_guest",
+               "previous_cancellations",
+               "previous_bookings_not_canceled",
+               "reserved_room_type",
+               "assigned_room_type",
+               "booking_changes",
+               "deposit_type",
+               "agent",
+               "company",
+               "days_in_waiting_list",
+               "customer_type",
+               "adr",
+               "required_car_parking_spaces",
+               "total_of_special_requests",
+               "reservation_status",
+               "reservation_status_date"
+)
+
+Description <- c("Two type of hotels are in this dataset, (1) Resort Hotel and (2) City Hotel.",
+                 "Value indicating of the booking was canceled (1) or not (0).",
+                 "Number of days that elapsed between the entering data of the booking into the PMS and the arrival date, or how long the booking was in advance.",
+                 "Year of arrival date.",
+                 "Month of arrival date.",
+                 "Week number of year for arrival date.",
+                 "Day of arrival date.",
+                 "Number of weekend nights (Saturday or Sunday) the guest stayed or booked to stay at the hotel.",
+                 "Number of week nights (Monday to Friday) the guest stayed or booked to stay at the hotel.",
+                 "Number of adults.",
+                 "Number of children.",
+                 "Number of babies.",
+                 "Type of meal booked. Categories are presented in standard hospitality meal packages: Undefined/SC – no meal package; BB – Bed & Breakfast; HB – Half board (breakfast and one other meal – usually dinner); FB – Full board (breakfast, lunch and dinner).",
+                 "Country of origin. Categories are represented in the ISO 3155–3:2013 format.",
+                 "Market segment designation. In categories, the term <TA> means Travel Agents and <TO> means Tour Operators.",
+                 "Booking distribution channel. The term “TA” means “Travel Agents” and “TO” means “Tour Operators.", 
+                 "Value indicating if the booking name was from a repeated guest (1) or not (0).",
+                 "Number of previous bookings that were cancelled by the customer prior to the current booking.",
+                 "Number of previous bookings not cancelled by the customer prior to the current booking.",
+                 "Code of room type reserved. Code is presented instead of designation for anonymity reasons.",
+                 "Code for the type of room assigned to the booking. Sometimes the assigned room type differs from the reserved room type due to hotel operation reasons (e.g. overbooking) or by customer request. Code is presented instead of designation for anonymity reasons.",
+                 "Number of changes/amendments made to the booking from the moment the booking was entered on the PMS until the moment of check-in or cancellation.", 
+                 "Indication on if the customer made a deposit to guarantee the booking. This variable can assume three categories: No Deposit – no deposit was made; Non Refund – a deposit was made in the value of the total stay cost; Refundable – a deposit was made with a value under the total cost of stay.",
+                 "ID of the travel agency that made the booking.",
+                 "ID of the company/entity that made the booking or responsible for paying the booking. ID is presented instead of designation for anonymity reasons.",
+                 "Number of days the booking was in the waiting list before it was confirmed to the customer.",
+                 "Type of booking, assuming one of four categories: (1) Contract - when the booking has an allotment or other type of contract associated to it; (2) Group – when the booking is associated to a group; (3) Transient – when the booking is not part of a group or contract, and is not associated to other transient booking; (4) Transient-party – when the booking is transient, but is associated to at least other transient booking.",
+                 "Average Daily Rate as defined by dividing the sum of all lodging transactions by the total number of staying nights.",
+                 "Number of car parking spaces required by the customer.",
+                 "Number of special requests made by the customer (e.g. twin bed or high floor).",
+                 "Reservation last status, assuming one of three categories: Canceled – booking was canceled by the customer; Check-Out – customer has checked in but already departed; No-Show – customer did not check-in and did inform the hotel of the reason why.",
+                 "Date at which the last status was set. This variable can be used in conjunction with the ReservationStatus to understand when was the booking canceled or when did the customer checked-out of the hotel.")
+                 
+data.frame(Variables, Description) %>% 
+  kbl() %>% 
+  kable_styling(bootstrap_options = c("hover",
+                                      "striped",
+                                      "bordered")) %>% 
+  scroll_box(height = "1000px")
+
+```
+
+
+
+### 4.3 Data exploration
+
+This data set has 119,390 rows of data and 32 columns hosting 32 variables. 
+
+Following is a quick table summarizing the detail and structural conditions of this data set. Have a quick snapshot at the different group of table and their columns. 
+
+
+***   
+
+
+```{r}
+
+skim_without_charts(mydata)
+
+```
+
+***   
+
+
+This data set is surprisingly *clean* by looking at the **n_missing** and **complete_rate**, they are associated with the number of missing values detected in each variable in the data set. Other than the variable, **Children** that has a near perfect **complete rate**, the rest of all variables do not have missing value. 
+
+
+Looking at the variable type "character",  
+
+* This data set has **13 character** variables such as hotel, meal, country, market_segment, deposit_tyoem agent, customer type and etc.
+* Looking at the **n_unique**, all of this character variables can be used as grouping objects to group our data during analysis. They have unique levels of attributes. For example, such as variable "hotel", it has 2 n_unique levels for 119,390 rows of hotel data. it indicating that these data can be classified into 2 groups during analysis. And it may applies to the rest of the variables falling into this group. These variables will be converted into **factor** during data manipulation for this grouping characteristic to happen.      
+* The column **whitesoace** shows there are no white spaces in the data set to clean.   
+
+Looking at the variable type "Date",    
+
+* Date is usually a labelled as "character" when they are first imported into R because many countries and companies usually do not have their arrangement of year, month, day matching the standard date format of R (year-month-day.)    
+* However, this data set has its date that matching the format of R and has been recognised and classified by the R to *date* type.
+* Correct classification of data type is important for any analysis occurring in later stages of a data analysis project.   
+* There is no missing n value in date.    
+* We can clearly see that data in this data set were collected between 2014-10-17 to 2017-09-14. It gives us an idea of how old this data is and its range. 
+
+Looking at the variable type "numeric",  
+
+* There are 18 numerical variable in this data set, such as not limited to lead time, dates of arrival into numeric year, month, day, the numbers of adult, children and babies, as well as average daily rate (adr), number of car parking spaces required by visitors and etc.
+
+Another way of quick looking at all current variables:
+
+```{r}
+names(mydata)
+```
+
+
+## 5 DATA INTEGRITY ASSESSMENT
+
+The information provided in this data set are relevant to the business questions in section 3 **SCENARIO AND BUSINESS QUESTIONS** and is able to answer those questions. 
+
+This is a secondary data because I am using a second source of data to answer my own questions about the hotel sector instead of collecting the data myself. So, the data set in this context is not considered original data set. Although it is a secondary data source but I grade it a great and credited data source as the data set was introduced and identified as a useful data set for students by Google for its well-designed, extensive data analytics course. This data set was also from a research article, studied by relevant professional, having their credits on *Kaggle* by the uploader. 
+
+The data set is also highly comprehensive and provides multiple aspects of variables to answer my questions. This data set is also cited in *Kaggle* to identify where the data set is from and the name and authors of the relevant research paper. This data is also considered current, collected within last 5 to 10 years, and it would represent current context and conditions, but may be not after the COVID19 outbreak in 2020. 
+
+Thus, this data set is relevant, secondary, comprehensive, cited and is considered moderately current. And these attributes apply to the results of this project. 
+
+
+## 6 DATA CLEANING
+
+From the table in section 4.3 Data exploration, we have seen that the data set may has been cleaned before uploading to *kaggle* as a public data set for public-use. In the data set, there is no missing values, and no white spaces in character variables to trim. 
+
+However, there are a lot of **character** data that can be used for grouping, known as categorical features. Let's convert them into **factor** so that we are able to view what the attributes (known as levels) within them. 
+
+## 7 DATA MANIPULATION
+
+### 7.1 Manipulating factor variables 
+
+Converting **character** variables into **factor** variables using following code (click the *code* on the right). 
+
+```{r}
+# The original dataset is called "mydata", we always do not touch the original data set by creating a new object and work on it because we may need the orignal dataset in later analysis, or maybe not. This step is to save time and protect the original dataset. 
+
+mydata2 <- mydata
+
+# From now on, I will manipulate, clean and using this mydata2 for all analysis. 
+
+mydata2 <- mydata2 %>% 
+  mutate_if(is.character, factor)
+
+```
+
+Lets check is there any **character** denoted as **chr** type in the mydata2? 
+
+```{r}
+
+mydata2 %>% 
+  select_if(is.character) %>% 
+  glimpse()
+
+```
+I get **zero column** of that, which mean there is none, and it also means that the conversion of all character variables into factor has been successful. 
+
+From following structural exploration of the data set, we are able to see the number of **levels** in each variables. For example, hotel has 2 levels of which are City hotel and Resort Hotels; arrival_date_month has 12 levels started with "April“, "Auguest" and so on and so forth. 
+
+```{r}
+mydata2 %>% 
+  select_if(is.factor) %>% 
+  str()
+
+```
+
+We can tell that arrival_date_month is comprised of months and we need to sort it from January to December. 
+
+How about other variables? Do they need any cleaning such as spaces within the string, typo, or NA (non-filling field that needs attention)?
+
+Below is a complete summary of all levels within each of the 13 factor variables.   
+
+***
+
+
+```{r}
+mydata2 %>% 
+  select_if(is.factor) %>% 
+  sapply(levels)
+
+
+```
+
+***
+
+All variables seems perfect without any mentioned errors that need to be cleaned. We are able to see **NULL** in *agent* and *company*.  These null are not able to be filled in as there are no extractable, related information in this table. I will drop these null if these two variables are to be used in the later analysis.  
+
+### 7.2 Manipulate date
+
+Rearrange the variable **arrival_date_month** using following code to achieve the standard month sequence from Janurary to December.
+
+```{r}
+
+mydata2$arrival_date_month <- factor(mydata2$arrival_date_month, 
+                                     levels = month.name)
+
+```
+
+### 7.3 Manipulating numerical variables 
+
+There are a few numerical variables needed to be changed to factor type prior to analysis. These variables are years and binary data. Binary data means the data is generally recorded with either "Yes" or "No", "True" or "FALSE", or "0" or "1". They are not "numerical results" from a study.  
+
+```{r}
+
+mydata2 %>% 
+  select_if(is.double) %>% 
+  summary()
+
+
+
+```
+
+Identified that 3 numerical variables to be changed into factor variables:
+
+* **arrival_date_year**: Changing arrival year into factor type can help analysis in later stage by its grouping feature.
+* **is_canceled**: has value of either "0" for "not cancelled" or "1" assigned to booking that was "cancelled".
+* **is_repeated_guest**: repeated guest (1) or not (0).
+
+```{r}
+
+mydata2 <- mydata2 %>% 
+  mutate(arrival_date_year = factor(arrival_date_year,
+                                    levels = c(2015, 2016, 2017)),
+         is_canceled = factor(is_canceled),
+         is_canceled = fct_recode(is_canceled,
+                                  "Not_cancelled" = "0",
+                                  "cancelled" = "1"),
+         is_repeated_guest = factor(is_repeated_guest),
+         is_repeated_guest = fct_recode(is_repeated_guest,
+                                        "Yes" = "1",
+                                        "No" = "0"))
+
+```
+
+## 8 EXPLORATORY DATA ANALYSIS (EDA)
+
+### 8.1 City hotel has more reservations 
+
+This data set starts from 2014 to 2017, and the city hotel in the data set received more reservations than the resort hotel in the data set during this period.
+
+```{r, warning=FALSE, message=FALSE, fig.width=10, fig.height=7}
+df8.1 <- mydata2 %>% 
+  mutate(reservation_year = format(reservation_status_date, "%Y"),
+         reservation_year = factor(reservation_year, 
+                       levels = c("2014", "2015", "2016", "2017")),
+         reservation_month = format(reservation_status_date, "%b"),
+         reservation_month = factor(reservation_month,
+                                    levels = month.name)) %>% 
+  select(hotel, reservation_year, reservation_month, is_canceled) %>% 
+  group_by(hotel, reservation_year) %>% 
+  summarise(count = n())
+
+
+ggplot(df8.1, aes(x = reservation_year, y = count, fill = hotel)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.8, colour = "black") +
+  geom_text(aes(label = prettyNum(count, big.mark = ",")), 
+            position = position_dodge(width = 0.8),
+            vjust = -1
+            ) +
+  scale_y_continuous(lim = c(0, 45000),
+                     label = function(x)paste0({x/1000}, ",000")) +
+  
+  labs(title = "Figure 1. Reservations received by two hotels by year",
+       subtitle = "City hotel had more reservations than resort hotel",
+       caption = "Kar Hou Ng",
+       x = "Year",
+       y = "Counts of reservation") +
+  theme(plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        plot.title = element_text(face = "bold"),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0)))
+  
+  
+```
+
+
+### 8.2 City hotel has more VALID reservations 
+
+However, reservations can be canceled and we have this cancellation data to modify figure 1. Figure 2 shows opaque valid reservations after removal reservations that were recorded cancelled in the data set. All reservations in 2014 were detected cancelled. *In all later analysis, data of 2014 will not be included.*
+
+```{r, fig.width=10, fig.height=7, message=FALSE, warning=FALSE}
+
+# df2 - with "is_canceled"
+df8.2 <- mydata2 %>% 
+  mutate(reservation_year = format(reservation_status_date, "%Y"),
+         reservation_year = factor(reservation_year, 
+                       levels = c("2014", "2015", "2016", "2017")),
+         reservation_month = format(reservation_status_date, "%b"),
+         reservation_month = factor(reservation_month,
+                                    levels = month.name),
+         is_canceled = factor(is_canceled,
+                              levels = c("cancelled", "Not_cancelled"))) %>% 
+  select(hotel, reservation_year, reservation_month, is_canceled) %>% 
+  group_by(hotel, reservation_year, is_canceled) %>% 
+  summarise(count = n())
+
+# make the graph with df8.1, in previous section
+
+ggplot(df8.1, aes(x = reservation_year, y = count, fill = hotel)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.8, alpha = 0.2) +
+  geom_text(aes(label = prettyNum(count, big.mark = ",")), 
+            position = position_dodge(width = 0.8),
+            vjust = -1,
+            alpha = 0.2
+            ) +
+  geom_bar(data = df8.2 %>% filter(is_canceled == "Not_cancelled"), 
+           stat = "identity",
+           position = "dodge",
+           width = 0.8,
+           color = "black") +
+  geom_text(data = df8.2 %>% filter(is_canceled == "Not_cancelled"), 
+            aes(label = prettyNum(count, big.mark = ",")),
+            position = position_dodge(width = 0.8),
+            vjust = -0.8) +
+  scale_y_continuous(lim = c(0, 45000),
+                     label = function(x)paste0({x/1000}, ",000")) +
+  labs(title = "Figure 2. Opaque are Valid Reservation after removal of cancelled ones",
+       subtitle = "City hotel still had more reservations",
+       caption = "Kar Hou Ng",
+       x = "Year",
+       y = "Counts of reservation") +
+  theme(plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        plot.title = element_text(face = "bold"),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0)))
+
+```
+
+
+
+
+### 8.3 Total revenue comparison 
+
+There is no revenue data from the data set, however we have following columns to calculate. 
+
+* **adr** is provided, which stands for **average daily rate**. There is no assigned currency, and I will just give it a "$" sign.
+
+* Calculate the **total_nights** adding **stays_in_weekend_nights** and **stays_in_week_nights**.
+
+* Revenue = adr x total_nights.  
+
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=7}
+
+#df1
+
+df8.3.1 <- mydata2 %>% 
+  mutate(total_night = stays_in_weekend_nights + stays_in_week_nights,
+         revenue = total_night*adr) %>% 
+  mutate(reservation_year = format(reservation_status_date, "%Y"),
+         reservation_year = factor(reservation_year, 
+                       levels = c("2014", "2015", "2016", "2017")),
+         reservation_month = format(reservation_status_date, "%b"),
+         reservation_month = factor(reservation_month,
+                                    levels = month.name),
+         is_canceled = factor(is_canceled,
+                              levels = c("cancelled", "Not_cancelled"))) %>% 
+  select(hotel, reservation_year, total_night, revenue) %>% 
+  group_by(hotel, reservation_year) %>% 
+  summarise(total_revenue = sum(revenue))
+
+#df2 - with "is_canceled"
+
+df8.3.2 <- mydata2 %>% 
+  mutate(total_night = stays_in_weekend_nights + stays_in_week_nights,
+         revenue = total_night*adr) %>% 
+  mutate(reservation_year = format(reservation_status_date, "%Y"),
+         reservation_year = factor(reservation_year, 
+                       levels = c("2014", "2015", "2016", "2017")),
+         reservation_month = format(reservation_status_date, "%b"),
+         reservation_month = factor(reservation_month,
+                                    levels = month.name),
+         is_canceled = factor(is_canceled,
+                              levels = c("cancelled", "Not_cancelled"))) %>% 
+  select(hotel, reservation_year, is_canceled, total_night, revenue) %>% 
+  group_by(hotel, reservation_year, is_canceled) %>% 
+  summarise(total_revenue = sum(revenue))
+
+#Make the graph
+
+ggplot(df8.3.1, aes(x = reservation_year, y = total_revenue, fill = hotel)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.9, alpha = 0.4) +
+  geom_text(aes(label = paste0("$", prettyNum(total_revenue, big.mark = ","))), 
+            position = position_dodge(width = 0.9),
+            vjust = -1,
+            colour = "blue",
+            alpha = 0.4) +
+  geom_bar(data = df8.3.2 %>% filter(is_canceled == "Not_cancelled"),
+           stat = "identity", 
+           position = "dodge", 
+           width = 0.9, 
+           colour = "black") +
+  theme(legend.position = "right") +
+    labs(title = "Figure 3. Opaque are *Total Revenue* after removal of cancelled ones",
+       subtitle = "City hotel earn more revenue in 2016 and 2017",
+       caption = "Kar Hou Ng",
+       x = "Year",
+       y = "Total Revenue",
+       fill = "Hotel") +
+  geom_text(data = df8.3.2 %>% filter(is_canceled == "Not_cancelled"),
+            aes(label = paste0("$", prettyNum(total_revenue,big.mark = ","))),
+            position = position_dodge(width = 0.9),
+            vjust = -1,
+            colour = "blue") +
+  theme(plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        plot.title = element_text(face = "bold"),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0))) +
+  scale_y_continuous(lim = c(0, 13000000),
+                     labels = function(x)paste0("$", {x/1000000}, " mil")) 
+  
+
+```
+
+The reason why I interested in this graph is that every single reservation (every single row) may have stayed for different days. Though total reservation in the city hotel was more than the resort hotel, but perhaps resort hotel can earn more revenues for having more reservations that stay longer consecutive days than City hotel.
+
+Great points from figure 3:
+
+* Identified in 2015, though city hotel has more valid reservation than resort hotel (7465 and 5997), but city hotel earn less revenue than resort hotel.   
+
+* This graph also shows how much the losses are from canceled reservation, which were significant. 
+
+
+### 8.4 Countries where guests are from 
+
+It would be interesting to see where guests are from. Following chart has excluded cancelled reservations.
+
+
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=7}
+
+df8.4.1 <- mydata2 %>% 
+  filter(is_canceled == "Not_cancelled") %>% 
+  group_by(hotel, country) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%"))
+
+
+ggplot(df8.4.1, aes(fill = -count, area = count, label = paste0(country, "\n",  prettyNum(count, big.mark = ","), "\n", "(", per, ")"))) +
+  geom_treemap() +
+  geom_treemap_text(place = "center", colour = "white") +
+  theme(legend.position = "none") +
+  facet_wrap(~hotel) +
+  theme(strip.background = element_rect(fill = "white"),
+        plot.title = element_text(size = 20, face = "bold", vjust = 2, hjust = 0.5),
+        strip.text = element_text(size = 15, face = "bold")) +
+  labs(caption = "From 2015 - 2017",
+       title = "Figure 4. Most guests of City and Resort hotels from Portugal (PRT)")
+  
+
+```
+
+Top 5 countries of City Hotel: Portugal (PRT), France (FRA), Germany (DEU), United Kingdom (GBR), and Spain (ESP)
+Top 5 countries of Resort Hotel: Portugal (PRT), United Kingdom (GBR), Spain (ESP), Ireland (irl), and France (FRA).
+
+
+### 8.5 Meals ordered by guests
+
+There are 4 type of meals in both hotels:
+
+* Undefined/SC: no meal  
+* BB: Bed & Breakfast  
+* HB: Half board (breakfast and one other meal – usually dinner)  
+* FB: Full board (breakfast, lunch and dinner)  
+
+In the data set, **undefined** and **SC** are seperated. Rows that are either undefined or SC are actually in the same "no meal request" category. Therefore, a little bit of manipulation here to combine both levels together and I give it a new level named : **no_meal**. I will as well assign the full names of all meal abbreviations (BB, HB and FB) during analysis to facilitate readers' reading.
+
+***
+
+
+```{r, message=FALSE, warning=FALSE, fig.width=7, fig.height=6}
+#set the data frame for this section
+
+df8.5 <- mydata2 %>% 
+  filter(is_canceled == "Not_cancelled") %>%               # Cancelled reservations have been excluded.
+  mutate(meal = fct_recode(meal,
+                           "no_meal" = "Undefined",
+                           "no_meal" = "SC",
+                           "Bed_Breakfast" = "BB",
+                           "Half_board" = "HB",
+                           "Full_board" = "FB"))
+
+# get the percentage of meals for labels
+
+df8.5 <- df8.5 %>%
+  group_by(hotel, meal) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%"))
+
+# plot the graph
+
+ggplot(df8.5, aes(x = hotel, y = count, fill = meal)) +
+  geom_bar(stat = "identity", position = "fill") +
+  geom_text(aes(label = paste0(meal, ":  ", per)), 
+            position = position_fill(vjust = 0.5)) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(), 
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 15), 
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm")) +
+  labs(title = "Figure 5. Meal orders between City and Resort Hotel",
+       subtitle = "Only 3.34% of guest in Resort Hotel didn't order any meal compared to City Hotel",
+       caption = "From 2015 - 2017",
+       y = "Proportion",
+       x = "Hotels")
+  
+```
+
+***
+
+* Surprisingly, both hotels have the similar equal portion of guests (77%) ordered BB (Bed_Breakfast).   
+* In the resort hotel, more guests preferred breakfast and dinner (Half_board) than city hotel.  
+* Only 3.3% of guests in resort hotel did not order any meals.  
+
+
+### 8.6 Comparing visitors with children in both hotels
+
+There are 3 columns record numbers of adults, children and babies per reservation. I will create a column to classify whether the reservation was with or without kids, kids is the total sum of the number of children and babies at the single reservation. 
+
+EDA shows that both of this hotels have similar proportion of guests with kids (7.66% vs 8.75%) with majority of visitors had no kids in their reservation.
+
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=9}
+df8.6 <- mydata2 %>% 
+  mutate(Kids = case_when(children > 0 ~ "With_kids",
+                          babies > 0 ~ "With_kids",
+                          TRUE ~ "Without_kids")) %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # data of cancelled reservation is excluded
+  group_by(hotel, Kids) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2),
+         per = paste0(per, "%"))
+
+# plot the graph
+
+ggplot(df8.6, aes(x= "", y = count, fill = Kids)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  coord_polar(theta = "y", start = 0) +
+  theme(legend.position = "top") +
+  scale_fill_manual(values = c("orange", "green2")) +
+  geom_text(aes(label = paste0(Kids, ":", "\n", per)), 
+            position = position_stack(vjust = 0.5),
+            size = 6) +
+  facet_wrap(~hotel, switch = "x") +
+  theme(axis.title = element_blank(),
+        legend.position = "none",
+        strip.text = element_text(size = 15), 
+        plot.title = element_text(hjust = 0.5, face = "bold", vjust = 2),
+        plot.subtitle = element_text(hjust = 0.5, vjust = 2)) +
+  labs(title = "Figure 6. Both hotel has similar proportion of guests with- and without kids",
+       subtitle = "Kids include Children and babies",
+       caption = "From 2015 - 2017")
+
+```
+
+
+### 8.7 Which hotel has more special request per reservation?
+
+Guests in both hotels had the same demand of special request, with 0.74 per person in the city hotel, and 0.67 in the resort hotel.
+ 
+```{r, message=FALSE, warning=FALSE, fig.width=15, fig.height = 8}
+
+# set up df of this section
+
+fig8.7 <- mydata2 %>% 
+  filter(is_canceled == "Not_cancelled") %>%                    # data of cancelled reservation is excluded
+  group_by(hotel) %>%  
+  summarise(count = n(),
+            Total_special_Request = sum(total_of_special_requests)) %>% 
+  mutate(per = Total_special_Request/sum(Total_special_Request)*100,
+         per = paste0(round(per), "%"),
+         Special_rate = Total_special_Request/count) %>% 
+  relocate(Special_rate, .after = Total_special_Request)
+  
+# plot graph 1
+
+fig8.7.1 <- ggplot(fig8.7, aes(x = hotel, y = Total_special_Request, colour = hotel)) +
+  geom_point(size = 5) +
+  theme_bw() +
+  geom_segment(aes(x = hotel, xend = hotel, y = 0, yend = Total_special_Request)) +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold"), 
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        axis.title.y = element_text(margin = margin(0, 15, 0, 0)),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 15)) + 
+  geom_text(aes(label = paste0(prettyNum(Total_special_Request, big.mark = ","), " (", per ,")")), 
+            vjust = -1.5, size = 5) +
+  labs(x = "Hotel",
+       y = "Total Special Request (Count.)",
+       caption = "From 2015 - 2017",
+       title = "In total, city hotel received 27% more special requests",
+       subtitle = "However, City hotel had 34259 guests vs 19414 of Resort Hotel") +
+  scale_y_continuous(lim = c(0, 40000),
+                     labels = function(x)paste0({x/1000}, "k")) 
+
+# plot graph 2
+
+fig8.7.2 <- ggplot(fig8.7, aes(x = hotel, y = Special_rate, colour = hotel)) +
+  geom_point(size = 5) +
+  theme_bw() +
+  geom_segment(aes(x = hotel, xend = hotel, y = 0, yend = Special_rate)) +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold"), 
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        axis.title.y = element_text(margin = margin(0, 15, 0, 0)),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 15)) + 
+  geom_text(aes(label = round(Special_rate, 2)), 
+            vjust = -1.5, size = 5) +
+  labs(x = "Hotel",
+       y = "Special Request per reservation",
+       caption = "Kar Hou Ng",
+       title = "Both hotels Actually have similar rate of special request per booking",
+       subtitle = "Formula: Total special Request / Total reservation") +
+  scale_y_continuous(lim = c(0, 1))
+
+
+# combine both graph
+
+grid.arrange(fig8.7.1, 
+             fig8.7.2,
+             ncol = 2,
+             top = textGrob("Figure 7. Dual-graph summarise guests special request",
+                            gp = gpar(fontsize = 20, font = 2))
+             )
+             
+
+
+```
+
+### 8.8 Resort hotel need more parking spaces
+
+It might also interesting to see do guests in resort hotel need more parking spaces than guests in city hotel, and yes, the resort hotel has nearly 4.5 times more parking-space demand (0.191/0.042) than city hotel. 
+
+
+```{r, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 7}
+
+# set up df
+
+df8.8 <- mydata2 %>% 
+  filter(is_canceled == "Not_cancelled") %>%                  # data of cancelled reservation is excluded
+  group_by(hotel) %>%  
+  summarise(count = n(),
+            Total_required_car_parking_spaces = sum(required_car_parking_spaces)) %>% 
+  group_by(hotel) %>% 
+  mutate(rate = Total_required_car_parking_spaces/count)
+
+# set up colour palatte 
+
+ytext_colour <- ifelse(df8.8$hotel == "Resort Hotel", "blue", "brown")
+
+# plot the graph 
+
+ggplot(df8.8, aes(x = hotel, y = rate, colour = hotel)) +
+  geom_bar(stat = "identity", alpha = 0, size = 2, width = 0.5) +
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_text(vjust = 4, face = "bold"),
+        plot.subtitle = element_text(vjust = 4),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 12, colour = ytext_colour),        # use the palette created    
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0))) +
+  geom_text(aes(label = paste0(round(rate, 3), "\n",
+                               "Total parking-space requests: ", Total_required_car_parking_spaces, "\n",
+                               "   Total reservations: ", count)), 
+            hjust = -0.2,
+            vjust = 0) +
+  scale_y_continuous(limit = c(0, 0.30)) +
+  labs(title = "Figure 8. Resort hotel had 4.5 times more parking-space requests per reservation \nthan City Hotel",
+       subtitle = "Formula: Total parking-space requests / Total reservation",
+       caption = "From 2015 - 2017",
+       y = "Parking space request rate") +
+  scale_colour_manual(values = c("brown", "blue"))
+  
+
+```
+
+### 8.9 Family with more children tend to book earlier? (Lead time)
+
+Lead time tells us how long a reservation is booked in advance, in the unit of "day". 
+
+I hypothesise that lead time can be related to the size of the family that made the reservation, especially with the number of children the family have. The higher the number of children in the reservation, the longer the lead time the reservation would be. It is because family-size visitors might have a yearly travel plan and book hotels of preferred in advanced to secure a room. 
+
+However, it is not the case from the data set. Following graph shows that many advanced reservations were also booked by people without any children.   
+
+* If the hypothesis for increased lead time with increased number of kids valid, we will see each box plot moving upward when number of kids increased. But it is not the case.    
+
+
+```{r, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 7}
+
+# make df for this section
+
+df8.9 <- mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # to exclude cancelled reservation
+  mutate(number_of_kid = children + babies) %>% 
+  relocate(number_of_kid, .after = babies) %>% 
+  mutate(number_of_kid = factor(number_of_kid))
+
+# make x axis label
+
+samplesize <- df8.9 %>% 
+  group_by(hotel, number_of_kid) %>% 
+  summarise(count = n()) %>% 
+  mutate(count = paste0(number_of_kid, "\n",
+                        "(n = ", count, ")"))
+
+
+ggplot(df8.9, aes(x = number_of_kid, y = lead_time)) +
+  geom_jitter(alpha = 0.2, aes(colour = hotel)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0) +
+  facet_wrap(~hotel) +
+  scale_x_discrete(label = samplesize$count) +
+  theme(legend.position = "none", 
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5),"cm"),
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0)),
+        strip.text = element_text(size = 12)) +
+  labs(title = "Figure 9. Many guests without children made hotel booking in advance",
+       subtitle = "Two of the hotels share similar trend",
+       x = "Number of kids", 
+       y = "Lead time (day)",
+       caption = "From 2015 - 2017")
+
+
+
+
+```
+
+### 8.10 Transient and Transient-party support the business of both hotels
+
+There are 4 types of customer categorising each reservation (each row) in the data:
+
+* (1) Contract - when the booking has an allotment or other type of contract associated to it;   
+* (2) Group – when the booking is associated to a group;  
+* (3) Transient – when the booking is not part of a group or contract, and is not associated to other transient booking;   
+* (4) Transient-party – when the booking is transient, but is associated to at least other transient booking.
+
+Transient and Transient-party are the two most important customer types supporting the business of both hotels.
+
+```{r, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 6}
+
+# make df for this section
+
+df8.10 <- mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # to exclude cancelled reservation
+  group_by(hotel, customer_type) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(percent = paste0(per, "%"),
+         lbl = paste0(customer_type, ": ", "\n", per, "%"))
+
+
+# plot the graph
+
+ggplot(df8.10, aes(x = "", y = count, fill = customer_type)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~hotel, switch = "x") +
+  coord_polar(theta = "y", start = 99) +
+  geom_text(aes(label = percent), position = position_stack(vjust = 0.5), 
+            size = 4) + 
+  theme_minimal() +
+  theme(legend.position = "right",
+        plot.title = element_text(size = 15, face = "bold"),
+        strip.text = element_text(size = 15),
+        axis.title = element_blank()) +
+  labs(title = "Figure 10. Transient and Transient-party remain the two biggest proportion for both hotels",
+       caption = "From 2015 - 2017",
+       fill = "Customer type: ")
+  
+
+```
+
+```{r}
+
+df8.10 %>% 
+  select(hotel, customer_type, count, percent) %>% 
+  rename("Hotel" = "hotel",
+         "Customer type" = "customer_type",
+         "Number of reservations" = "count",
+         "Percentage" = "percent") %>% 
+  arrange(Hotel, desc(Percentage)) %>% 
+  kbl(align = "c",
+      caption = "Supporting statistics") %>% 
+  kable_classic_2("hover")
+
+```
+
+### 8.11 Rarely repeated guest for both hotels
+
+```{r, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 6}
+# set up df for this section
+
+df8.11 <- mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # to exclude cancelled reservation
+  group_by(hotel, is_repeated_guest) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%"))
+
+
+# plot the graph
+
+ggplot(df8.11, aes(x = is_repeated_guest, y = count, fill = hotel)) +
+  geom_bar(sta = "identity") +
+  geom_text(aes(label = paste0(prettyNum(count, big.mark = ","), " (", per, ")")),
+            vjust = -1) +
+  facet_wrap(~hotel) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.title.x = element_text(margin = margin(10, 0, 0, 0)),
+        axis.title.y = element_text(margin = margin(0, 10, 0, 0)),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        plot.title = element_text(size = 15, face = "bold", vjust = 3),
+        plot.subtitle = element_text(vjust = 3),
+        strip.text = element_text(size = 12),
+        strip.background = element_rect(fill = "grey")) +
+  scale_y_continuous(lim = c(0, 50000),
+                     label = function(x)paste0({x/1000}, ",000")) +
+  labs(title = "Figure 11. Nearly 95% of reservations of both hotels are not repeated guests",
+       subtitle = "Resort hotel has only 2% more repeated guests",
+       caption = "From 2015 - 2017",
+       x = "Is Repeated Guest each reservation?",
+       y = "Counts of reservations")
+
+
+```
+
+### 8.12 Marketing - Market segment
+
+There are 7 market segments grouping all the reservations in the data set. Online travel agent (TA), offline travel agent and operator (TA/TO), and Directs are the top 3 market segments for both hotels. 
+
+Resort hotel has about 10% lesser of visitors went through online TA as compared to City hotel, and instead resort hotel has about 10% more visitors from "direct" market segment. 
+
+```{r, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 8}
+
+# set the df of this section
+
+df8.12 <- mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # to exclude cancelled reservation
+  group_by(hotel, market_segment) %>% 
+  summarise(count = n()) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%"))
+
+# plot the graph
+
+ggplot(df8.12, aes(x = "", y = count, fill = market_segment)) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y", start = 20) +
+  facet_wrap(~hotel) +
+  theme_minimal() +
+  geom_text(aes(label = per), position = position_stack(vjust = 0.5), size = 3.5) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 16),
+        strip.text = element_text(size = 12)) +
+  labs(title = "Figure 12. Online TA, Offline TA/TO and Groups are the top 3 market segments",
+       caption = "From 2015 - 2017",
+       fill = "Market Segment: ") 
+
+
+
+
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # to exclude cancelled reservation
+  group_by(hotel, market_segment) %>% 
+  summarise(count = n()) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%")) %>% 
+  arrange(hotel, desc(per)) %>% 
+  kbl(align = "c",
+      caption = "Supporting statistics") %>% 
+  kable_classic_2("hover")
+
+```
+
+
+### 8.13 Marketing - distribution channel
+
+All Visitors from each of these 7 market segments booked their reservations via 5 booking distribution channels:
+
+```{r, message=FALSE, warning=FALSE}
+levels(mydata2$distribution_channel)
+```
+TA/TO remain the largest distribution channel for both the city and resort hotels at 81.99% and 68.48%. Though resort hotel has lesser TA/TO proportion, but 10% more visitors in the resort hotel book through direct distribution channel. They booked directly to the hotel. 
+
+```{r, message=FALSE, warning=FALSE, fig.width = 11, fig.height = 7}
+
+# set the df of this section
+
+df8.13 <- mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>%                            # to exclude cancelled reservation
+  group_by(hotel, distribution_channel) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%"))
+  
+# plot the graph
+
+ggplot(df8.13, aes(x = "", y = count, fill = distribution_channel)) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y") +
+  facet_wrap(~hotel, switch = "x") +
+  theme_minimal() +
+  theme(legend.position = "none", 
+        axis.title = element_blank(),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"),
+        strip.text = element_text(size = 12),
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 16, vjust = 3),
+        plot.subtitle = element_text(hjust = 0.5, vjust = 3)) +
+  geom_text(aes(label = paste0(distribution_channel, "\n", per)), position = position_stack(vjust = 0.5)) +
+  labs(title = "Figure 13. City and Resort hotels both rely heavily on TA/TO with the aid of Direct",
+       subtitle = "Resort hotel has 10% higher reservations via Direct than City hotel's Direct.",
+       caption = "From 2015 - 2017")
+  
+  
+  
+```
+
+### 8.14 Almost all guests did not made a deposit to secure their bookings
+
+Almost all guests from 2015 to 2017 visited both the hotels did not made deposit to secure their bookings and they have successfully stayed at the hotels (figure 14).
+
+```{r, message=FALSE, warning=FALSE, fig.width = 10, fig.height = 7}
+
+# set the df of this section
+
+df8.14 <- mydata2 %>%  
+  filter(is_canceled == "Not_cancelled") %>% 
+  group_by(hotel, deposit_type) %>% 
+  summarise(count = n()) %>% 
+  group_by(hotel) %>% 
+  mutate(per = round(count/sum(count)*100, 2)) %>% 
+  mutate(per = paste0(per, "%"))
+
+
+# plot the graph
+
+ggplot(df8.14, aes(x = "", y = count, fill = deposit_type)) + 
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y") +
+  facet_wrap(~hotel, switch = "x") +
+  theme_minimal() +
+  geom_text(aes(label = per), position = position_stack(vjust = 0.5)) +
+  theme(legend.position = "bottom",
+        axis.title = element_blank(),
+        plot.title = element_text(vjust = 0.5, face = "bold", size = 13, hjust = 0.5),
+        plot.subtitle = element_text(vjust = 0.5, size = 12, hjust = 0.5),
+        strip.text = element_text(size = 12)) +
+  labs(title = "Figure 14. 99% of reservations of both city and resort hotels did not made a deposit to guarantee the booking",
+       caption = "From 2015 - 2017",
+       fill = "Deposit Type: ")
+
+
+```
+
+
+
+
+## 9 CONCLUSION 
+
+Base on available data and information, I summarise that between 2015 to 2017: 
+
+* Both the city and resort hotel had the lowest bookings in 2015, but peaked in 2016, and decreased in 2017.
+* The city hotel received more bookings than the resort hotel, in about 20% to 30%.  
+* Both hotels have Portugal visitors as their top customer (23% for City Hotel, and 35% for resor hotel). Both hotel have France, United Kingdom, and Spain as 3 of their top 5 countries of guest origin.  
+* 77% of guests from both hotel only went for breakfast only, which is a large portion. 19% of guests in resort hotel had breakfast plus dinner, higher than city hotel which had only 8%. 14% of guest in city hotel had no meal at the hotel, but only 3% of guest in resort hotel had no meal.   
+* Resort hotel should have more guests with children but it was not the case. Resort hotel had only 1% higher than city hotel, 8.75% vs 7.66%. Most guest from both hotels had no kids when they visited.  
+* Both hotels had similar rate of special request per booking (city hotel 0.74 vs resort hotel 0.67).   
+* Guests in resort hotel had significant amout of parking-space requests than city hotel, at rate 0.199 per booking of resort hotel vs 0.042 per booking of city hotel, despite city hotel had 17k more bookings than resort hotel. 0.199 vs 0.042 is a 4.5 times different.   
+* One may assume guests with children may book in advanced, but data show many people with zero kids also booked in advanced.    
+* Transient and Transient-party are the two most important customer types supporting the business of both hotels. Total of 97% for city hotel, and 93.5% for resort hotel.   
+* Nearly 95% of reservations in both hotels were not repeated guests.    
+* Online travel agent and travel operators are the most important market segments and distribution channels. Directed distribution channel ranked the second for both city and resort hotel.    
+* 99% of reservations from both of the city and resort hotels did not made a deposit to secure their bookings.   
+
+The only differences between resort and city hotel from the 15 specific graphs I can clearly see are:   
+
+1. City hotel had slightly more revenue than resort hotel.   
+2. Most likely guests in resort hotel will order at least 1 meal (only 3% ordered no meal compared to 14% of city hotel).   
+3. Resort hotel has lesser guests than city hotel but had 4.5 times more parking-space demand.   
+4. 10% more guests in resort hotel booked their rooms directly to the hotel.  
+
+
+## 10 LEGALITY
+
+
+This is a personal project created and designed for non-commercial use only. The data set of this personal project was introduced by Google data analytic certificate course and was made available for students for some analytics practices in the course. This is a public data set from *Kaggle*. Please visit Topic 4 in this project for the link. This project extends the analysis scope of the course. This personal project was not submitted and graded by Google. Google and I, nor any stakeholders relevant to the creation of this project held any responsibility for any outcomes affected from using the results of this project. This project is only for educational and skill demonstration purposes. 
+
+All photos in this project, such as those as the thumbnail are just for demonstration only, they have nothing to do with the data set, the location where the data collected, and the result of this analysis. I found these beautiful photos in my phone. :))
+
+**Thank you for reading**
