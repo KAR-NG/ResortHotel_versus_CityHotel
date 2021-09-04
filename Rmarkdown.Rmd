@@ -13,7 +13,7 @@ always_allow_html: yes
 
 ***  
 
-![](C:\Users\karho\Desktop\Google Data Analytics Certificate\Course 8 Materials - Capstone project\hotel\pic2.png)
+![](https://raw.githubusercontent.com/KAR-NG/hotel/main/pic2.png)
 
 ***  
 
@@ -38,7 +38,7 @@ This data set was fairly cleaned. Data manipulation was performed with a bit of 
 
 **Some graphs in this project: **
 
-![](C:\Users\karho\Desktop\Google Data Analytics Certificate\Course 8 Materials - Capstone project\hotel\pic3.png)
+![](https://raw.githubusercontent.com/KAR-NG/hotel/main/pic3.png)
 
 
 ## 2 R PACKAGES

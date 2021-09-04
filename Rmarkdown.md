@@ -52,7 +52,7 @@ Kar Ng
 
 ------------------------------------------------------------------------
 
-![](C:\Users\karho\Desktop\Google%20Data%20Analytics%20Certificate\Course%208%20Materials%20-%20Capstone%20project\hotel\pic2.png)
+![](https://raw.githubusercontent.com/KAR-NG/hotel/main/pic2.png)
 
 ------------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ covered in this project.
 
 **Some graphs in this project: **
 
-![](C:\Users\karho\Desktop\Google%20Data%20Analytics%20Certificate\Course%208%20Materials%20-%20Capstone%20project\hotel\pic3.png)
+![](https://raw.githubusercontent.com/KAR-NG/hotel/main/pic3.png)
 
 ## 2 R PACKAGES
 
